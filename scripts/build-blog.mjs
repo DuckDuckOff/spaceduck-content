@@ -23,7 +23,7 @@ function slugFromFilename(filename) {
 function parsePost(filename, source) {
   const match = source.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
   const metadata = {};
-  const body = match ? match[2].trim() : source.trim();
+  let body = match ? match[2].trim() : source.trim();
 
   for (const line of match?.[1].split(/\r?\n/) ?? []) {
     const separator = line.indexOf(":");
@@ -38,6 +38,13 @@ function parsePost(filename, source) {
       }
     }
     metadata[key] = value;
+  }
+
+  // The article template already renders the frontmatter title. Avoid
+  // rendering the conventional Markdown H1 a second time in the article.
+  const firstLine = body.split(/\r?\n/, 1)[0]?.trim();
+  if (firstLine === `# ${metadata.title}`) {
+    body = body.slice(body.indexOf("\n") + 1).trim();
   }
 
   return {
