@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "journal": "node scripts/journal.mjs"
+    "journal": "node scripts/journal.mjs",
+    "blog:build": "node scripts/build-blog.mjs",
+    "blog:deploy": "npm run blog:build && npx wrangler pages deploy ./blog-dist --project-name spaceduck-blog --commit-dirty=true"
   },
   "dependencies": {
     "@coinbase/onchainkit": "latest",

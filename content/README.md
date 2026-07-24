@@ -25,3 +25,19 @@ npm run journal -- publish 2026-07-24-what-i-learned-today.md --push
 `setup` initializes the local repository and configures `origin`. Git
 credentials are handled by Git itself; the CLI never stores a token. Alf can
 then be connected to the repository and branch you push to.
+
+## Cloudflare blog
+
+The public journal is a separate static site at `blog.spaceduck.ing`. Build it
+from approved posts and deploy it with Wrangler:
+
+```text
+npm run blog:build
+npm run blog:deploy
+```
+
+The Cloudflare Pages project is `spaceduck-blog`. After the first deployment,
+open Cloudflare Dashboard → Workers & Pages → `spaceduck-blog` → Custom
+domains → Set up a custom domain, then enter `blog.spaceduck.ing`. Because the
+domain is already in the same Cloudflare zone, Cloudflare can create the DNS
+record and certificate there.

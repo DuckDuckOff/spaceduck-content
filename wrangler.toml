@@ -1,0 +1,3 @@
+name = "spaceduck-blog"
+pages_build_output_dir = "./blog-dist"
+
