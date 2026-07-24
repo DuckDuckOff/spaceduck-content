@@ -154,7 +154,7 @@ footer { padding: 35px 0 60px; color: var(--muted); font: .75rem ui-monospace, m
 `;
 
 function layout(title, content) {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)} · spaceduck</title><meta name="description" content="Field notes from the spaceduck signal."><link rel="stylesheet" href="/styles.css"></head><body><div class="shell"><header><a class="mark" href="/"><span>✦</span> spaceduck.ing</a><nav><a href="/">journal</a><a href="/rss.xml">rss</a></nav></header>${content}<footer>signal received · spaceduck.ing</footer></div></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)} · spaceduck</title><meta name="description" content="Field notes from the spaceduck signal."><link rel="stylesheet" href="/styles.css"></head><body><div class="shell"><header><a class="mark" href="/"><span>✦</span> spaceduck.ing</a><nav><a href="/">journal</a><a href="/about/">about</a><a href="/rss.xml">rss</a></nav></header>${content}<footer>signal received · spaceduck.ing</footer></div></body></html>`;
 }
 
 const entries = await fs.readdir(postsDir, { withFileTypes: true }).catch(() => []);
@@ -176,6 +176,10 @@ const cards = posts.length
 
 const home = `<main><section class="hero"><div class="eyebrow">independent field journal</div><h1>Notes from the edge of the signal.</h1><p>A quiet record of building, resonance, strange systems, and the ideas that keep returning.</p><span class="signal">transmission open</span></section><section class="posts">${cards}</section></main>`;
 await fs.writeFile(path.join(outputDir, "index.html"), layout("Journal", home));
+
+const about = `<main class="article"><div class="eyebrow">orientation</div><h1>A small place for the signal.</h1><div class="article-body"><p>Spaceduck is a living field journal for observations, build logs, strange ideas, and the ordinary moments that deserve to be remembered.</p><p>Notes begin privately, are shaped with care, and become public only when they are ready. The journal is deliberately small: a quiet surface for paying attention while the larger systems take form.</p><h2>How it works</h2><p>Approved Markdown notes are committed to Git, transformed into a static journal, and deployed to Cloudflare at <a href="https://blog.spaceduck.ing">blog.spaceduck.ing</a>.</p><p>The archive is a record of what arrived, what changed, and what is still becoming.</p></div></main>`;
+await fs.mkdir(path.join(outputDir, "about"), { recursive: true });
+await fs.writeFile(path.join(outputDir, "about", "index.html"), layout("About", about));
 
 for (const post of posts) {
   const article = `<main class="article"><div class="eyebrow">${escapeHtml(post.lane)}</div><h1>${escapeHtml(post.title)}</h1><div class="lead">${escapeHtml(post.date)} · spaceduck.ing</div><div class="article-body">${markdownToHtml(post.body)}</div></main>`;
