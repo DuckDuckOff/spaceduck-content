@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "journal": "node scripts/journal.mjs",
-    "blog:build": "node scripts/build-blog.mjs",
+    "blog:build": "node --max-old-space-size=1024 scripts/build-blog.mjs",
     "blog:deploy": "npm run blog:build && npx wrangler pages deploy ./blog-dist --project-name spaceduck-blog --commit-dirty=true"
   },
   "dependencies": {
