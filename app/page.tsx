@@ -7,6 +7,14 @@ export default function Home() {
   return (
     <div className={styles.container}>
       <header className={styles.headerWrapper}>
+        <a
+          className={styles.blogLink}
+          href="https://blog.spaceduck.ing"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Journal ↗
+        </a>
         <Wallet />
       </header>
 

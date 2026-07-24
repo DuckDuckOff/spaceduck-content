@@ -6,8 +6,20 @@
 
 .headerWrapper {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   padding: 1rem;
+}
+
+.blogLink {
+  color: #171717;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.blogLink:hover {
+  text-decoration: underline;
 }
 
 .content {
