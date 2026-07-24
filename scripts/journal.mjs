@@ -177,7 +177,8 @@ async function gitStatus() {
 }
 
 async function commitPost(filename, push) {
-  await git("add", "--", `content/drafts/${filename}`, `content/posts/${filename}`);
+  // -A is required here because publishing deletes the draft and creates the post.
+  await git("add", "-A", "--", "content/drafts/", "content/posts/");
   const staged = await git("diff", "--cached", "--quiet").then(() => false).catch(() => true);
   if (!staged) {
     console.log("No Git changes to commit");
