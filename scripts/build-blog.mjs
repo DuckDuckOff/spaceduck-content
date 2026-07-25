@@ -154,7 +154,7 @@ footer { padding: 35px 0 60px; color: var(--muted); font: .75rem ui-monospace, m
 `;
 
 function layout(title, content) {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)} · spaceduck</title><meta name="description" content="Field notes from the spaceduck signal."><link rel="stylesheet" href="/styles.css"></head><body><div class="shell"><header><a class="mark" href="/"><span>✦</span> spaceduck.ing</a><nav><a href="/">journal</a><a href="/about/">about</a><a href="/rss.xml">rss</a></nav></header>${content}<footer>signal received · spaceduck.ing</footer></div></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)} · spaceduck</title><meta name="description" content="Field notes from the spaceduck signal."><link rel="stylesheet" href="/styles.css"></head><body><div class="shell"><header><a class="mark" href="/"><span>✦</span> spaceduck.ing</a><nav><a href="/">journal</a><a href="/about/">about</a><a href="/synapses/">synapses</a><a href="/rss.xml">rss</a></nav></header>${content}<footer>signal received · spaceduck.ing</footer></div></body></html>`;
 }
 
 const entries = await fs.readdir(postsDir, { withFileTypes: true }).catch(() => []);
@@ -180,6 +180,14 @@ await fs.writeFile(path.join(outputDir, "index.html"), layout("Journal", home));
 const about = `<main class="article"><div class="eyebrow">orientation</div><h1>A small place for the signal.</h1><div class="article-body"><p>Spaceduck is a living field journal for observations, build logs, strange ideas, and the ordinary moments that deserve to be remembered.</p><p>Notes begin privately, are shaped with care, and become public only when they are ready. The journal is deliberately small: a quiet surface for paying attention while the larger systems take form.</p><h2>How it works</h2><p>Approved Markdown notes are committed to Git, transformed into a static journal, and deployed to Cloudflare at <a href="https://blog.spaceduck.ing">blog.spaceduck.ing</a>.</p><p>The archive is a record of what arrived, what changed, and what is still becoming.</p></div></main>`;
 await fs.mkdir(path.join(outputDir, "about"), { recursive: true });
 await fs.writeFile(path.join(outputDir, "about", "index.html"), layout("About", about));
+
+const synapsesPosts = posts.filter((post) => /synapses/i.test(`${post.title} ${post.body}`));
+const synapsesLinks = synapsesPosts.length
+  ? synapsesPosts.map((post) => `<li><a href="/posts/${encodeURIComponent(post.slug)}/">${escapeHtml(post.title)}</a><span>${escapeHtml(post.date)}</span></li>`).join("")
+  : "<li>No public SynapSes notes yet.</li>";
+const synapses = `<main class="article"><div class="eyebrow">system log</div><h1>SynapSes</h1><div class="lead">a directory-based node system for opportunities becoming instances</div><div class="article-body"><p>SynapSes gives each server a local boundary, a memory, and a way to develop structure around meaningful opportunities. The shared runtime stays separate from each instance directory.</p><h2>Current state</h2><ul><li><strong>origin</strong> — local system boundary initialized</li><li><strong>opportunities</strong> — creation command available</li><li><strong>instances</strong> — awaiting the first sealed emergence</li><li><strong>next</strong> — inquiry, capability compilation, validation, and sealing</li></ul><h2>Log entries</h2><ul>${synapsesLinks}</ul><p><a href="/">← return to the journal</a></p></div></main>`;
+await fs.mkdir(path.join(outputDir, "synapses"), { recursive: true });
+await fs.writeFile(path.join(outputDir, "synapses", "index.html"), layout("SynapSes", synapses));
 
 for (const post of posts) {
   const article = `<main class="article"><div class="eyebrow">${escapeHtml(post.lane)}</div><h1>${escapeHtml(post.title)}</h1><div class="lead">${escapeHtml(post.date)} · spaceduck.ing</div><div class="article-body">${markdownToHtml(post.body)}</div></main>`;
