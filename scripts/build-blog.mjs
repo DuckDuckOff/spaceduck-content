@@ -149,6 +149,9 @@ h1 { margin: 18px 0; font: 500 clamp(3rem, 8vw, 6.4rem)/.96 Georgia, serif; lett
 .article-body p { margin: 1.2em 0; }
 .article-body li { margin: .45em 0; }
 .article-body code { padding: .15em .35em; color: var(--accent); background: var(--panel); font: .85em ui-monospace, monospace; }
+.back-link { margin: 0 0 35px; font: .78rem ui-monospace, monospace; text-transform: lowercase; }
+.back-link a { color: var(--muted); text-decoration: none; }
+.back-link a:hover { color: var(--accent); }
 footer { padding: 35px 0 60px; color: var(--muted); font: .75rem ui-monospace, monospace; }
 @media (max-width: 650px) { header { padding-bottom: 55px; } .post-card { grid-template-columns: 1fr; gap: 7px; } .shell { width: min(100% - 28px, 1060px); } }
 `;
@@ -190,7 +193,7 @@ await fs.mkdir(path.join(outputDir, "synapses"), { recursive: true });
 await fs.writeFile(path.join(outputDir, "synapses", "index.html"), layout("SynapSes", synapses));
 
 for (const post of posts) {
-  const article = `<main class="article"><div class="eyebrow">${escapeHtml(post.lane)}</div><h1>${escapeHtml(post.title)}</h1><div class="lead">${escapeHtml(post.date)} · spaceduck.ing</div><div class="article-body">${markdownToHtml(post.body)}</div></main>`;
+  const article = `<main class="article"><p class="back-link"><a href="/">← back to list</a></p><div class="eyebrow">${escapeHtml(post.lane)}</div><h1>${escapeHtml(post.title)}</h1><div class="lead">${escapeHtml(post.date)} · spaceduck.ing</div><div class="article-body">${markdownToHtml(post.body)}</div></main>`;
   const directory = path.join(outputDir, "posts", post.slug);
   await fs.mkdir(directory, { recursive: true });
   await fs.writeFile(path.join(directory, "index.html"), layout(post.title, article));
