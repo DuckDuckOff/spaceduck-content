@@ -304,7 +304,7 @@ checkButton.addEventListener("click", async () => {
 publishButton.addEventListener("click", async () => {
   if (!reviewedDraft || !confirm("Publish this reviewed entry to the public journal?")) return;
   status.textContent = "Publishing...";
-  try { const result = await call("publish", { draft: reviewedDraft }); status.textContent = "Published " + result.result.filename + "."; publishButton.disabled = true; }
+  try { const result = await call("publish", { draft: reviewedDraft }); status.textContent = "Committed " + result.result.filename + (result.result.deploy === "deploy-triggered" ? ". Deployment triggered." : ". Pages still needs a deployment."); publishButton.disabled = true; }
   catch (error) { status.textContent = error.message; }
 });
 </script>`;
