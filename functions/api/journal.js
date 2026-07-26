@@ -137,6 +137,20 @@ async function publish(draft, env) {
   return { filename, repository, branch, deploy };
 }
 
+async function githubCheck(env) {
+  if (!env.GITHUB_TOKEN) throw new Error("GITHUB_TOKEN is not configured");
+  const repository = env.GITHUB_REPOSITORY || "DuckDuckOff/spaceduck-content";
+  const apiUrl = env.GITHUB_API_URL || "https://api.github.com";
+  const headers = { accept: "application/vnd.github+json", authorization: `Bearer ${env.GITHUB_TOKEN}`, "x-github-api-version": "2022-11-28", "user-agent": "spaceduck-journal-chat" };
+  const userResult = await fetch(`${apiUrl}/user`, { headers });
+  const user = await userResult.json().catch(() => ({}));
+  if (!userResult.ok) throw new Error(`GitHub identity check failed (${userResult.status})${typeof user.message === "string" ? `: ${user.message.slice(0, 180)}` : ""}`);
+  const repoResult = await fetch(`${apiUrl}/repos/${repository}`, { headers });
+  const repo = await repoResult.json().catch(() => ({}));
+  if (!repoResult.ok) throw new Error(`GitHub repository check failed (${repoResult.status})${typeof repo.message === "string" ? `: ${repo.message.slice(0, 180)}` : ""}`);
+  return { githubUser: user.login, repository: repo.full_name, defaultBranch: repo.default_branch, permissions: repo.permissions || {} };
+}
+
 export async function onRequestPost({ request, env }) {
   const password = env.JOURNAL_BOT_PASSWORD;
   if (!password) return json({ error: "Journal bot is not configured" }, 503);
@@ -155,6 +169,7 @@ export async function onRequestPost({ request, env }) {
       if (typeof body.prompt !== "string" || body.prompt.trim().length < 3) return json({ error: "Give the journal bot a little more to work with" }, 400);
       return json({ ok: true, draft: await createDraft(body.prompt.trim().slice(0, 8000), env) });
     }
+    if (body.action === "github-check") return json({ ok: true, github: await githubCheck(env) });
     if (body.action === "publish") {
       if (!body.draft || typeof body.draft.title !== "string" || typeof body.draft.body !== "string") return json({ error: "A valid reviewed draft is required" }, 400);
       const draft = {

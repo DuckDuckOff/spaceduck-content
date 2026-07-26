@@ -265,9 +265,10 @@ logoutButton.addEventListener("click", async () => { await call("logout", {}).ca
 await fs.mkdir(path.join(outputDir, "chat"), { recursive: true });
 await fs.writeFile(path.join(outputDir, "chat", "index.html"), layout("Chat", chat));
 
-const externalChat = `<main class="chat-panel"><div class="eyebrow">external journal interface</div><h1>Reach the journal bot.</h1><p>Use the journal password to draft and publish entries remotely. A secure session cookie is used after sign-in; the password is not stored by this page.</p><label for="password">journal password</label><input id="password" type="password" autocomplete="current-password" placeholder="Required to continue"><label for="external-prompt">what should be recorded?</label><textarea id="external-prompt" placeholder="Record today’s mission..." maxlength="8000"></textarea><div class="chat-actions"><button id="external-draft">Draft entry</button><button id="external-publish" class="secondary" disabled>Publish reviewed entry</button></div><div id="external-status" class="chat-status" role="status"></div><section id="external-preview" class="chat-preview" hidden><h2 id="external-title"></h2><div id="external-meta"></div><pre id="external-body"></pre></section></main><script>
+const externalChat = `<main class="chat-panel"><div class="eyebrow">external journal interface</div><h1>Reach the journal bot.</h1><p>Use the journal password to draft and publish entries remotely. A secure session cookie is used after sign-in; the password is not stored by this page.</p><label for="password">journal password</label><input id="password" type="password" autocomplete="current-password" placeholder="Required to continue"><label for="external-prompt">what should be recorded?</label><textarea id="external-prompt" placeholder="Record today’s mission..." maxlength="8000"></textarea><div class="chat-actions"><button id="external-check" class="secondary">Check GitHub connection</button><button id="external-draft">Draft entry</button><button id="external-publish" class="secondary" disabled>Publish reviewed entry</button></div><div id="external-status" class="chat-status" role="status"></div><section id="external-preview" class="chat-preview" hidden><h2 id="external-title"></h2><div id="external-meta"></div><pre id="external-body"></pre></section></main><script>
 const password = document.getElementById("password");
 const prompt = document.getElementById("external-prompt");
+const checkButton = document.getElementById("external-check");
 const draftButton = document.getElementById("external-draft");
 const publishButton = document.getElementById("external-publish");
 const status = document.getElementById("external-status");
@@ -293,6 +294,11 @@ function showDraft(draft) {
 draftButton.addEventListener("click", async () => {
   status.textContent = "Drafting...";
   try { if (!password.value) throw new Error("Enter the journal password first"); await call("login", { password: password.value }); showDraft((await call("draft", { prompt: prompt.value })).draft); status.textContent = "Review the draft below. Nothing is public yet."; }
+  catch (error) { status.textContent = error.message; }
+});
+checkButton.addEventListener("click", async () => {
+  status.textContent = "Checking GitHub connection...";
+  try { if (!password.value) throw new Error("Enter the journal password first"); await call("login", { password: password.value }); const result = await call("github-check", {}); status.textContent = "GitHub account: " + result.github.githubUser + "\\nRepository: " + result.github.repository + "\\nPush permission: " + (result.github.permissions.push ? "yes" : "no"); }
   catch (error) { status.textContent = error.message; }
 });
 publishButton.addEventListener("click", async () => {
