@@ -92,7 +92,11 @@ async function createDraft(prompt, env) {
       ],
     }),
   });
-  if (!result.ok) throw new Error(`AI draft failed (${result.status})`);
+  if (!result.ok) {
+    const detail = await result.json().catch(() => ({}));
+    const message = typeof detail.error?.message === "string" ? `: ${detail.error.message.slice(0, 180)}` : "";
+    throw new Error(`AI draft failed (${result.status})${message}`);
+  }
   const payload = await result.json();
   const content = payload.choices?.[0]?.message?.content;
   if (!content) throw new Error("AI returned an empty draft");
