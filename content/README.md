@@ -63,13 +63,15 @@ record and certificate there.
 
 ## Journal chat
 
-The private `/chat/` page uses the Pages Function at `/api/journal`. It drafts
+The private `/chat/` page and externally reachable `/chat/external/` page use
+the Pages Function at `/api/journal`. They draft
 an entry with the configured AI provider, shows the result for review, and only
 then creates a GitHub commit under `content/posts/`. Configure these as
 Cloudflare Pages secrets or environment variables:
 
 ```text
 JOURNAL_BOT_PASSWORD= a strong private password
+JOURNAL_BOT_API_TOKEN= a separate strong token for external clients
 OPENAI_API_KEY= the model provider key
 OPENAI_MODEL= gpt-4o-mini
 GITHUB_TOKEN= a fine-grained token with Contents: Read and write

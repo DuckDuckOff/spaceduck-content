@@ -52,6 +52,12 @@ async function authenticated(request, secret) {
   }
 }
 
+function apiTokenAuthenticated(request, env) {
+  const expected = env.JOURNAL_BOT_API_TOKEN;
+  const provided = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  return Boolean(expected && provided && provided === expected);
+}
+
 function filenameFor(date, title) {
   const slug = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "untitled-note";
   return `${date}-${slug}.md`;
@@ -136,7 +142,7 @@ export async function onRequestPost({ request, env }) {
     return json({ ok: true }, 200, sessionHeaders(await makeSession(password), 86400));
   }
   if (body.action === "logout") return json({ ok: true }, 200, sessionHeaders("", 0));
-  if (!(await authenticated(request, password))) return json({ error: "Authentication required" }, 401);
+  if (!(await authenticated(request, password)) && !apiTokenAuthenticated(request, env)) return json({ error: "Authentication required" }, 401);
 
   try {
     if (body.action === "draft") {

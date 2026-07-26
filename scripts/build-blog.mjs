@@ -265,6 +265,46 @@ logoutButton.addEventListener("click", async () => { await call("logout", {}).ca
 await fs.mkdir(path.join(outputDir, "chat"), { recursive: true });
 await fs.writeFile(path.join(outputDir, "chat", "index.html"), layout("Chat", chat));
 
+const externalChat = `<main class="chat-panel"><div class="eyebrow">external journal interface</div><h1>Reach the journal bot.</h1><p>Use a dedicated bot token to draft and publish entries remotely. The token is sent only in the request header and is never displayed or saved by this page.</p><label for="token">journal bot token</label><input id="token" type="password" autocomplete="off" placeholder="Required to continue"><label for="external-prompt">what should be recorded?</label><textarea id="external-prompt" placeholder="Record today’s mission..." maxlength="8000"></textarea><div class="chat-actions"><button id="external-draft">Draft entry</button><button id="external-publish" class="secondary" disabled>Publish reviewed entry</button></div><div id="external-status" class="chat-status" role="status"></div><section id="external-preview" class="chat-preview" hidden><h2 id="external-title"></h2><div id="external-meta"></div><pre id="external-body"></pre></section></main><script>
+const token = document.getElementById("token");
+const prompt = document.getElementById("external-prompt");
+const draftButton = document.getElementById("external-draft");
+const publishButton = document.getElementById("external-publish");
+const status = document.getElementById("external-status");
+const preview = document.getElementById("external-preview");
+const title = document.getElementById("external-title");
+const meta = document.getElementById("external-meta");
+const body = document.getElementById("external-body");
+let reviewedDraft = null;
+async function call(action, data) {
+  const result = await fetch("/api/journal", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + token.value }, body: JSON.stringify({ action, ...data }) });
+  const payload = await result.json().catch(() => ({}));
+  if (!result.ok) throw new Error(payload.error || "Request failed");
+  return payload;
+}
+function showDraft(draft) {
+  reviewedDraft = { ...draft, date: new Date().toISOString().slice(0, 10) };
+  title.textContent = draft.title;
+  meta.textContent = reviewedDraft.date + " · " + draft.lane;
+  body.textContent = draft.body;
+  preview.hidden = false;
+  publishButton.disabled = false;
+}
+draftButton.addEventListener("click", async () => {
+  status.textContent = "Drafting...";
+  try { if (!token.value) throw new Error("Enter the journal bot token first"); showDraft((await call("draft", { prompt: prompt.value })).draft); status.textContent = "Review the draft below. Nothing is public yet."; }
+  catch (error) { status.textContent = error.message; }
+});
+publishButton.addEventListener("click", async () => {
+  if (!reviewedDraft || !confirm("Publish this reviewed entry to the public journal?")) return;
+  status.textContent = "Publishing...";
+  try { const result = await call("publish", { draft: reviewedDraft }); status.textContent = "Published " + result.result.filename + "."; publishButton.disabled = true; }
+  catch (error) { status.textContent = error.message; }
+});
+</script>`;
+await fs.mkdir(path.join(outputDir, "chat", "external"), { recursive: true });
+await fs.writeFile(path.join(outputDir, "chat", "external", "index.html"), layout("External Chat", externalChat));
+
 const about = `<main class="article"><div class="eyebrow">orientation</div><h1>A small place for the signal.</h1><div class="article-body"><p>Spaceduck is a living field journal for observations, build logs, strange ideas, and the ordinary moments that deserve to be remembered.</p><p>Notes begin privately, are shaped with care, and become public only when they are ready. The journal is deliberately small: a quiet surface for paying attention while the larger systems take form.</p><h2>How it works</h2><p>Approved Markdown notes are committed to Git, transformed into a static journal, and deployed to Cloudflare at <a href="https://blog.spaceduck.ing">blog.spaceduck.ing</a>.</p><p>The archive is a record of what arrived, what changed, and what is still becoming.</p></div></main>`;
 await fs.mkdir(path.join(outputDir, "about"), { recursive: true });
 await fs.writeFile(path.join(outputDir, "about", "index.html"), layout("About", about));
