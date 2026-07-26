@@ -172,12 +172,23 @@ h1 { margin: 18px 0; font: 500 clamp(3rem, 8vw, 6.4rem)/.96 Georgia, serif; lett
 .back-link { margin: 0 0 35px; font: .78rem ui-monospace, monospace; text-transform: lowercase; }
 .back-link a { color: var(--muted); text-decoration: none; }
 .back-link a:hover { color: var(--accent); }
+.chat-panel { max-width: 720px; padding-bottom: 100px; }
+.chat-panel label { display: block; margin: 1.4em 0 .45em; color: var(--muted); font: .78rem ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; }
+.chat-panel input, .chat-panel textarea { width: 100%; border: 1px solid var(--line); border-radius: 4px; padding: .85em 1em; color: var(--ink); background: var(--panel); font: inherit; }
+.chat-panel textarea { min-height: 150px; resize: vertical; }
+.chat-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.chat-actions button { border: 1px solid var(--accent); border-radius: 4px; padding: .7em 1em; color: #07101b; background: var(--accent); font: .78rem ui-monospace, monospace; cursor: pointer; }
+.chat-actions button.secondary { color: var(--accent); background: transparent; }
+.chat-status { min-height: 1.5em; margin-top: 18px; color: var(--muted); font: .82rem ui-monospace, monospace; white-space: pre-wrap; }
+.chat-preview { margin-top: 28px; padding: 22px; border: 1px solid var(--line); background: rgba(13,25,40,.75); }
+.chat-preview h2 { margin-top: 0; font-weight: 500; }
+.chat-preview pre { overflow: auto; white-space: pre-wrap; color: var(--muted); font: .9rem/1.6 ui-monospace, monospace; }
 footer { padding: 35px 0 60px; color: var(--muted); font: .75rem ui-monospace, monospace; }
 @media (max-width: 650px) { header { padding-bottom: 55px; } .post-card { grid-template-columns: 1fr; gap: 7px; } .shell { width: min(100% - 28px, 1060px); } }
 `;
 
 function layout(title, content) {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)} · spaceduck</title><meta name="description" content="Field notes from the spaceduck signal."><link rel="stylesheet" href="/styles.css"></head><body><div class="shell"><header><a class="mark" href="/"><span>✦</span> spaceduck.ing</a><nav><a href="/">journal</a><a href="/about/">about</a><a href="/synapses/">synapses</a><a href="/rss.xml">rss</a></nav></header>${content}<footer>signal received · spaceduck.ing</footer></div></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)} · spaceduck</title><meta name="description" content="Field notes from the spaceduck signal."><link rel="stylesheet" href="/styles.css"></head><body><div class="shell"><header><a class="mark" href="/"><span>✦</span> spaceduck.ing</a><nav><a href="/">journal</a><a href="/about/">about</a><a href="/synapses/">synapses</a><a href="/chat/">chat</a><a href="/rss.xml">rss</a></nav></header>${content}<footer>signal received · spaceduck.ing</footer></div></body></html>`;
 }
 
 const entries = await fs.readdir(postsDir, { withFileTypes: true }).catch(() => []);
@@ -203,6 +214,56 @@ const cards = posts.length
 
 const home = `<main><section class="hero"><div class="eyebrow">independent field journal</div><h1>Notes from the edge of the signal.</h1><p>A quiet record of building, resonance, strange systems, and the ideas that keep returning.</p><span class="signal">transmission open</span></section><section class="posts">${cards}</section></main>`;
 await fs.writeFile(path.join(outputDir, "index.html"), layout("Journal", home));
+
+const chat = `<main class="chat-panel"><div class="eyebrow">private journal interface</div><h1>Talk to the journal.</h1><p>Describe what happened. The bot will shape a public-safe draft for you to review before anything is published.</p><label for="password">journal password</label><input id="password" type="password" autocomplete="current-password" placeholder="Required to continue"><label for="prompt">what should be recorded?</label><textarea id="prompt" placeholder="Record today’s mission..." maxlength="8000"></textarea><div class="chat-actions"><button id="draft">Draft entry</button><button id="publish" class="secondary" disabled>Publish reviewed entry</button><button id="logout" class="secondary" type="button">Log out</button></div><div id="status" class="chat-status" role="status"></div><section id="preview" class="chat-preview" hidden><h2 id="preview-title"></h2><div id="preview-meta"></div><pre id="preview-body"></pre></section></main><script>
+const password = document.getElementById("password");
+const prompt = document.getElementById("prompt");
+const draftButton = document.getElementById("draft");
+const publishButton = document.getElementById("publish");
+const logoutButton = document.getElementById("logout");
+const status = document.getElementById("status");
+const preview = document.getElementById("preview");
+const previewTitle = document.getElementById("preview-title");
+const previewMeta = document.getElementById("preview-meta");
+const previewBody = document.getElementById("preview-body");
+let reviewedDraft = null;
+async function call(action, data) {
+  const result = await fetch("/api/journal", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ action, ...data }) });
+  const payload = await result.json().catch(() => ({}));
+  if (!result.ok) throw new Error(payload.error || "Request failed");
+  return payload;
+}
+function showDraft(draft) {
+  reviewedDraft = { ...draft, date: new Date().toISOString().slice(0, 10) };
+  previewTitle.textContent = draft.title;
+  previewMeta.textContent = reviewedDraft.date + " · " + draft.lane;
+  previewBody.textContent = draft.body;
+  preview.hidden = false;
+  publishButton.disabled = false;
+}
+draftButton.addEventListener("click", async () => {
+  status.textContent = "Drafting...";
+  try {
+    if (!password.value) throw new Error("Enter the journal password first");
+    await call("login", { password: password.value });
+    const result = await call("draft", { prompt: prompt.value });
+    showDraft(result.draft);
+    status.textContent = "Review the draft below. Nothing is public yet.";
+  } catch (error) { status.textContent = error.message; }
+});
+publishButton.addEventListener("click", async () => {
+  if (!reviewedDraft || !confirm("Publish this reviewed entry to the public journal?")) return;
+  status.textContent = "Publishing...";
+  try {
+    const result = await call("publish", { draft: reviewedDraft });
+    status.textContent = "Published " + result.result.filename + (result.result.deploy === "deploy-triggered" ? ". Deployment triggered." : ". GitHub commit created; deployment may still need to run.");
+    publishButton.disabled = true;
+  } catch (error) { status.textContent = error.message; }
+});
+logoutButton.addEventListener("click", async () => { await call("logout", {}).catch(() => {}); reviewedDraft = null; publishButton.disabled = true; status.textContent = "Logged out."; });
+</script>`;
+await fs.mkdir(path.join(outputDir, "chat"), { recursive: true });
+await fs.writeFile(path.join(outputDir, "chat", "index.html"), layout("Chat", chat));
 
 const about = `<main class="article"><div class="eyebrow">orientation</div><h1>A small place for the signal.</h1><div class="article-body"><p>Spaceduck is a living field journal for observations, build logs, strange ideas, and the ordinary moments that deserve to be remembered.</p><p>Notes begin privately, are shaped with care, and become public only when they are ready. The journal is deliberately small: a quiet surface for paying attention while the larger systems take form.</p><h2>How it works</h2><p>Approved Markdown notes are committed to Git, transformed into a static journal, and deployed to Cloudflare at <a href="https://blog.spaceduck.ing">blog.spaceduck.ing</a>.</p><p>The archive is a record of what arrived, what changed, and what is still becoming.</p></div></main>`;
 await fs.mkdir(path.join(outputDir, "about"), { recursive: true });

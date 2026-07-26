@@ -61,3 +61,24 @@ domains → Set up a custom domain, then enter `blog.spaceduck.ing`. Because the
 domain is already in the same Cloudflare zone, Cloudflare can create the DNS
 record and certificate there.
 
+## Journal chat
+
+The private `/chat/` page uses the Pages Function at `/api/journal`. It drafts
+an entry with the configured AI provider, shows the result for review, and only
+then creates a GitHub commit under `content/posts/`. Configure these as
+Cloudflare Pages secrets or environment variables:
+
+```text
+JOURNAL_BOT_PASSWORD= a strong private password
+OPENAI_API_KEY= the model provider key
+OPENAI_MODEL= gpt-4o-mini
+GITHUB_TOKEN= a fine-grained token with Contents: Read and write
+GITHUB_REPOSITORY= DuckDuckOff/spaceduck-content
+GITHUB_BRANCH= main
+CF_PAGES_DEPLOY_HOOK_URL= optional Pages deploy hook
+```
+
+The deploy hook is optional. Without it, the bot safely creates the GitHub
+commit but reports that the Pages deployment still needs to run. Never place
+these values in the generated static files or in committed `.env` files.
+
