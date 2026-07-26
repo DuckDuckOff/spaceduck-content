@@ -9,6 +9,7 @@ import { execFile } from "node:child_process";
 const root = process.cwd();
 const draftsDir = path.join(root, "content", "drafts");
 const postsDir = path.join(root, "content", "posts");
+const mediaDir = path.join(root, "public", "media");
 
 await fs.mkdir(draftsDir, { recursive: true });
 await fs.mkdir(postsDir, { recursive: true });
@@ -140,6 +141,32 @@ async function listNotes() {
   posts.forEach((file) => console.log(`  content/posts/${file}`));
 }
 
+async function addMedia() {
+  const requested = args[1];
+  if (!requested) throw new Error("Use: npm run journal -- media <path-to-video> [--name filename]");
+
+  const source = path.resolve(requested);
+  const extension = path.extname(source).toLowerCase();
+  if (![".mp4", ".webm", ".ogg", ".mov"].includes(extension)) {
+    throw new Error("Supported video formats: .mp4, .webm, .ogg, .mov");
+  }
+
+  const requestedName = option("name", path.basename(source));
+  const filename = path.basename(requestedName);
+  if (filename !== requestedName || path.extname(filename).toLowerCase() !== extension) {
+    throw new Error("--name must be a simple filename with the same video extension");
+  }
+
+  await fs.mkdir(mediaDir, { recursive: true });
+  const destination = path.join(mediaDir, filename);
+  await fs.copyFile(source, destination, fs.constants.COPYFILE_EXCL).catch((error) => {
+    if (error.code === "EEXIST") throw new Error(`Media already exists: public/media/${filename}`);
+    throw error;
+  });
+  console.log(`Added public/media/${filename}`);
+  console.log(`Embed in a post with: {{video:/media/${filename}}}`);
+}
+
 async function setupGit() {
   const remote = option("remote");
   const branch = option("branch", process.env.SPACEDUCK_GIT_BRANCH || "main");
@@ -215,6 +242,7 @@ spaceduck journal
 
   npm run journal -- new --title "A note from the build"
   npm run journal -- list
+  npm run journal -- media <path-to-video> [--name filename]
   npm run journal -- publish 2026-07-24-a-note-from-the-build.md
   npm run journal -- setup --remote https://github.com/you/spaceduck-content.git
   npm run journal -- status
@@ -223,6 +251,9 @@ spaceduck journal
 New notes are private drafts. Publishing only moves a reviewed Markdown file
 into content/posts. Use --push when the approved commit should be sent to the
 configured Git remote for Alf to consume.
+
+Video files are copied into public/media and included in the static blog build.
+Use {{video:/media/filename.mp4|Optional caption}} on its own line in a post.
 `);
 }
 
@@ -230,6 +261,7 @@ try {
   if (command === "new") await createDraft();
   else if (command === "publish") await publishAndCommit();
   else if (command === "list") await listNotes();
+  else if (command === "media") await addMedia();
   else if (command === "setup") await setupGit();
   else if (command === "status") await gitStatus();
   else help();

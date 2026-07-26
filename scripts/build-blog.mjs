@@ -5,6 +5,7 @@ import path from "node:path";
 
 const root = process.cwd();
 const postsDir = path.join(root, "content", "posts");
+const publicDir = path.join(root, "public");
 const outputDir = path.join(root, "blog-dist");
 
 function escapeHtml(value) {
@@ -64,6 +65,15 @@ function inlineMarkdown(value) {
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2">$1</a>');
 }
 
+function videoEmbed(source) {
+  const match = source.trim().match(/^\{\{video:(\/media\/[A-Za-z0-9._/-]+)(?:\|([^}]+))?\}\}$/);
+  if (!match) return null;
+  const url = match[1];
+  const caption = match[2]?.trim();
+  const label = caption || "Journal video";
+  return `<figure class="journal-video"><video controls preload="metadata" src="${escapeHtml(url)}"><a href="${escapeHtml(url)}">${escapeHtml(label)}</a></video>${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ""}</figure>`;
+}
+
 function markdownToHtml(markdown) {
   const lines = markdown.split(/\r?\n/);
   const html = [];
@@ -87,6 +97,13 @@ function markdownToHtml(markdown) {
     if (!line.trim()) {
       flushParagraph();
       closeList();
+      continue;
+    }
+    const video = videoEmbed(line);
+    if (video) {
+      flushParagraph();
+      closeList();
+      html.push(video);
       continue;
     }
     const heading = line.match(/^(#{1,3})\s+(.+)$/);
@@ -149,6 +166,9 @@ h1 { margin: 18px 0; font: 500 clamp(3rem, 8vw, 6.4rem)/.96 Georgia, serif; lett
 .article-body p { margin: 1.2em 0; }
 .article-body li { margin: .45em 0; }
 .article-body code { padding: .15em .35em; color: var(--accent); background: var(--panel); font: .85em ui-monospace, monospace; }
+.journal-video { margin: 2.2em 0; }
+.journal-video video { display: block; width: 100%; max-height: 70vh; border: 1px solid var(--line); background: #000; }
+.journal-video figcaption { margin-top: .65em; color: var(--muted); font: .78rem ui-monospace, monospace; }
 .back-link { margin: 0 0 35px; font: .78rem ui-monospace, monospace; text-transform: lowercase; }
 .back-link a { color: var(--muted); text-decoration: none; }
 .back-link a:hover { color: var(--accent); }
@@ -172,6 +192,10 @@ posts.sort((a, b) => b.date.localeCompare(a.date) || b.filename.localeCompare(a.
 await fs.rm(outputDir, { recursive: true, force: true });
 await fs.mkdir(path.join(outputDir, "posts"), { recursive: true });
 await fs.writeFile(path.join(outputDir, "styles.css"), css);
+const mediaDir = path.join(publicDir, "media");
+await fs.cp(mediaDir, path.join(outputDir, "media"), { recursive: true, force: true }).catch((error) => {
+  if (error.code !== "ENOENT") throw error;
+});
 
 const cards = posts.length
   ? posts.map((post) => `<article class="post-card"><div class="post-meta">${escapeHtml(post.date)}<br>${escapeHtml(post.lane)}</div><div><h2><a href="/posts/${encodeURIComponent(post.slug)}/">${escapeHtml(post.title)}</a></h2><p>${escapeHtml(post.body.replace(/[#*`]/g, "").slice(0, 180))}${post.body.length > 180 ? "…" : ""}</p></div></article>`).join("\n")

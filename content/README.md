@@ -26,6 +26,25 @@ npm run journal -- publish 2026-07-24-what-i-learned-today.md --push
 credentials are handled by Git itself; the CLI never stores a token. Alf can
 then be connected to the repository and branch you push to.
 
+## Video files
+
+Add a video asset to the static site with:
+
+```text
+npm run journal -- media "C:\\path\\to\\test.MOV"
+```
+
+The command copies supported `.mp4`, `.webm`, `.ogg`, and `.mov` files into
+`public/media/`. Reference the asset on its own line in a Markdown post:
+
+```text
+{{video:/media/test.MOV|Test movie}}
+```
+
+The blog build copies `public/media/` into the deployed output. Browser support
+for MOV playback depends on the visitor's browser and codec; MP4 (H.264/AAC)
+or WebM is the most portable choice.
+
 ## Cloudflare blog
 
 The public journal is a separate static site at `blog.spaceduck.ing`. Build it
