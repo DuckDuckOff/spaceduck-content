@@ -265,8 +265,8 @@ logoutButton.addEventListener("click", async () => { await call("logout", {}).ca
 await fs.mkdir(path.join(outputDir, "chat"), { recursive: true });
 await fs.writeFile(path.join(outputDir, "chat", "index.html"), layout("Chat", chat));
 
-const externalChat = `<main class="chat-panel"><div class="eyebrow">external journal interface</div><h1>Reach the journal bot.</h1><p>Use a dedicated bot token to draft and publish entries remotely. The token is sent only in the request header and is never displayed or saved by this page.</p><label for="token">journal bot token</label><input id="token" type="password" autocomplete="off" placeholder="Required to continue"><label for="external-prompt">what should be recorded?</label><textarea id="external-prompt" placeholder="Record today’s mission..." maxlength="8000"></textarea><div class="chat-actions"><button id="external-draft">Draft entry</button><button id="external-publish" class="secondary" disabled>Publish reviewed entry</button></div><div id="external-status" class="chat-status" role="status"></div><section id="external-preview" class="chat-preview" hidden><h2 id="external-title"></h2><div id="external-meta"></div><pre id="external-body"></pre></section></main><script>
-const token = document.getElementById("token");
+const externalChat = `<main class="chat-panel"><div class="eyebrow">external journal interface</div><h1>Reach the journal bot.</h1><p>Use the journal password to draft and publish entries remotely. A secure session cookie is used after sign-in; the password is not stored by this page.</p><label for="password">journal password</label><input id="password" type="password" autocomplete="current-password" placeholder="Required to continue"><label for="external-prompt">what should be recorded?</label><textarea id="external-prompt" placeholder="Record today’s mission..." maxlength="8000"></textarea><div class="chat-actions"><button id="external-draft">Draft entry</button><button id="external-publish" class="secondary" disabled>Publish reviewed entry</button></div><div id="external-status" class="chat-status" role="status"></div><section id="external-preview" class="chat-preview" hidden><h2 id="external-title"></h2><div id="external-meta"></div><pre id="external-body"></pre></section></main><script>
+const password = document.getElementById("password");
 const prompt = document.getElementById("external-prompt");
 const draftButton = document.getElementById("external-draft");
 const publishButton = document.getElementById("external-publish");
@@ -277,7 +277,7 @@ const meta = document.getElementById("external-meta");
 const body = document.getElementById("external-body");
 let reviewedDraft = null;
 async function call(action, data) {
-  const result = await fetch("/api/journal", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + token.value }, body: JSON.stringify({ action, ...data }) });
+  const result = await fetch("/api/journal", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ action, ...data }) });
   const payload = await result.json().catch(() => ({}));
   if (!result.ok) throw new Error(payload.error || "Request failed");
   return payload;
@@ -292,7 +292,7 @@ function showDraft(draft) {
 }
 draftButton.addEventListener("click", async () => {
   status.textContent = "Drafting...";
-  try { if (!token.value) throw new Error("Enter the journal bot token first"); showDraft((await call("draft", { prompt: prompt.value })).draft); status.textContent = "Review the draft below. Nothing is public yet."; }
+  try { if (!password.value) throw new Error("Enter the journal password first"); await call("login", { password: password.value }); showDraft((await call("draft", { prompt: prompt.value })).draft); status.textContent = "Review the draft below. Nothing is public yet."; }
   catch (error) { status.textContent = error.message; }
 });
 publishButton.addEventListener("click", async () => {
