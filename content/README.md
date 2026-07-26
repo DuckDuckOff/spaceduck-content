@@ -31,14 +31,14 @@ then be connected to the repository and branch you push to.
 Add a video asset to the static site with:
 
 ```text
-npm run journal -- media "C:\\path\\to\\test.MOV"
+npm run journal -- media "C:\\path\\to\\test.mov"
 ```
 
 The command copies supported `.mp4`, `.webm`, `.ogg`, and `.mov` files into
 `public/media/`. Reference the asset on its own line in a Markdown post:
 
 ```text
-{{video:/media/test.MOV|Test movie}}
+{{video:/media/test.mov|Test movie}}
 ```
 
 The blog build copies `public/media/` into the deployed output. Browser support
@@ -60,3 +60,4 @@ open Cloudflare Dashboard → Workers & Pages → `spaceduck-blog` → Custom
 domains → Set up a custom domain, then enter `blog.spaceduck.ing`. Because the
 domain is already in the same Cloudflare zone, Cloudflare can create the DNS
 record and certificate there.
+
