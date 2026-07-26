@@ -124,8 +124,10 @@ async function publish(draft, env) {
     body: JSON.stringify({ message: `content: publish ${filename.replace(/\.md$/, "")}`, content: base64Utf8(content), branch }),
   });
   if (!result.ok) {
+    const detail = await result.json().catch(() => ({}));
     if (result.status === 422) throw new Error("A post with that title and date already exists");
-    throw new Error(`GitHub publish failed (${result.status})`);
+    const message = typeof detail.message === "string" ? `: ${detail.message.slice(0, 180)}` : "";
+    throw new Error(`GitHub publish failed (${result.status})${message}`);
   }
   let deploy = "committed";
   if (env.CF_PAGES_DEPLOY_HOOK_URL) {
