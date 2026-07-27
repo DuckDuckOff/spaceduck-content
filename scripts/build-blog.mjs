@@ -256,7 +256,7 @@ publishButton.addEventListener("click", async () => {
   status.textContent = "Publishing...";
   try {
     const result = await call("publish", { draft: reviewedDraft });
-    status.textContent = "Published " + result.result.filename + (result.result.deploy === "deploy-triggered" ? ". Deployment triggered." : ". GitHub commit created; deployment may still need to run.");
+    status.textContent = "Published " + result.result.filename + (result.result.deploy === "deploy-triggered" ? ". Deployment triggered." : ". GitHub commit created; automated deployment is running.");
     publishButton.disabled = true;
   } catch (error) { status.textContent = error.message; }
 });
@@ -304,7 +304,7 @@ checkButton.addEventListener("click", async () => {
 publishButton.addEventListener("click", async () => {
   if (!reviewedDraft || !confirm("Publish this reviewed entry to the public journal?")) return;
   status.textContent = "Publishing...";
-  try { const result = await call("publish", { draft: reviewedDraft }); status.textContent = "Committed " + result.result.filename + (result.result.deploy === "deploy-triggered" ? ". Deployment triggered." : ". Pages still needs a deployment."); publishButton.disabled = true; }
+  try { const result = await call("publish", { draft: reviewedDraft }); status.textContent = "Committed " + result.result.filename + (result.result.deploy === "deploy-triggered" ? ". Deployment triggered." : ". Automated Pages deployment is running."); publishButton.disabled = true; }
   catch (error) { status.textContent = error.message; }
 });
 </script>`;
