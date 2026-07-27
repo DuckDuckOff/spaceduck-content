@@ -265,12 +265,14 @@ logoutButton.addEventListener("click", async () => { await call("logout", {}).ca
 await fs.mkdir(path.join(outputDir, "chat"), { recursive: true });
 await fs.writeFile(path.join(outputDir, "chat", "index.html"), layout("Chat", chat));
 
-const externalChat = `<main class="chat-panel"><div class="eyebrow">external journal interface</div><h1>Reach the journal bot.</h1><p>Use the journal password to draft and publish entries remotely. A secure session cookie is used after sign-in; the password is not stored by this page.</p><label for="password">journal password</label><input id="password" type="password" autocomplete="current-password" placeholder="Required to continue"><label for="external-prompt">what should be recorded?</label><textarea id="external-prompt" placeholder="Record today’s mission..." maxlength="8000"></textarea><div class="chat-actions"><button id="external-check" class="secondary">Check GitHub connection</button><button id="external-draft">Draft entry</button><button id="external-publish" class="secondary" disabled>Publish reviewed entry</button></div><div id="external-status" class="chat-status" role="status"></div><section id="external-preview" class="chat-preview" hidden><h2 id="external-title"></h2><div id="external-meta"></div><pre id="external-body"></pre></section></main><script>
+const externalChat = `<main class="chat-panel"><div class="eyebrow">external journal interface</div><h1>Reach the journal bot.</h1><p>Use the journal password to draft and publish entries remotely. A secure session cookie is used after sign-in; the password is not stored by this page.</p><label for="password">journal password</label><input id="password" type="password" autocomplete="current-password" placeholder="Required to continue"><label for="external-prompt">what should be recorded?</label><textarea id="external-prompt" placeholder="Record today’s mission..." maxlength="8000"></textarea><div class="chat-actions"><button id="external-check" class="secondary">Check GitHub connection</button><button id="external-draft">Draft entry</button><button id="external-publish" class="secondary" disabled>Publish reviewed entry</button></div><label for="delete-filename">delete a published post</label><input id="delete-filename" placeholder="2026-07-27-my-entry.md" autocomplete="off"><div class="chat-actions"><button id="external-delete" class="secondary">Delete post</button></div><div id="external-status" class="chat-status" role="status"></div><section id="external-preview" class="chat-preview" hidden><h2 id="external-title"></h2><div id="external-meta"></div><pre id="external-body"></pre></section></main><script>
 const password = document.getElementById("password");
 const prompt = document.getElementById("external-prompt");
 const checkButton = document.getElementById("external-check");
 const draftButton = document.getElementById("external-draft");
 const publishButton = document.getElementById("external-publish");
+const deleteButton = document.getElementById("external-delete");
+const deleteFilename = document.getElementById("delete-filename");
 const status = document.getElementById("external-status");
 const preview = document.getElementById("external-preview");
 const title = document.getElementById("external-title");
@@ -305,6 +307,13 @@ publishButton.addEventListener("click", async () => {
   if (!reviewedDraft || !confirm("Publish this reviewed entry to the public journal?")) return;
   status.textContent = "Publishing...";
   try { const result = await call("publish", { draft: reviewedDraft }); status.textContent = "Committed " + result.result.filename + (result.result.deploy === "deploy-triggered" ? ". Deployment triggered." : ". Automated Pages deployment is running."); publishButton.disabled = true; }
+  catch (error) { status.textContent = error.message; }
+});
+deleteButton.addEventListener("click", async () => {
+  const filename = deleteFilename.value.trim();
+  if (!filename || !confirm("Permanently delete " + filename + " from the public journal?")) return;
+  status.textContent = "Deleting...";
+  try { if (!password.value) throw new Error("Enter the journal password first"); await call("login", { password: password.value }); const result = await call("delete", { filename }); status.textContent = "Deleted " + result.result.filename + ". Automated deployment is running."; }
   catch (error) { status.textContent = error.message; }
 });
 </script>`;

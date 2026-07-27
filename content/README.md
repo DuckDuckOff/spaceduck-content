@@ -85,3 +85,7 @@ The deploy hook is optional. Without it, the bot safely creates the GitHub
 commit but reports that the Pages deployment still needs to run. Never place
 these values in the generated static files or in committed `.env` files.
 
+The external page also supports deleting a published post by exact dated
+filename. Deletion requires the journal password and a confirmation, then
+creates a GitHub deletion commit for the automatic Pages deployment.
+

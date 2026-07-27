@@ -151,6 +151,32 @@ async function githubCheck(env) {
   return { githubUser: user.login, repository: repo.full_name, defaultBranch: repo.default_branch, permissions: repo.permissions || {} };
 }
 
+async function deletePost(filenameInput, env) {
+  if (!env.GITHUB_TOKEN) throw new Error("GITHUB_TOKEN is not configured");
+  const raw = typeof filenameInput === "string" ? filenameInput.trim() : "";
+  const filename = raw.replace(/^.*\/posts\//, "").replace(/\/$/, "").replace(/\.md$/, "") + ".md";
+  if (!/^\d{4}-\d{2}-\d{2}-[a-z0-9-]+\.md$/.test(filename)) throw new Error("Use the exact dated post filename, for example 2026-07-27-my-entry.md");
+  const repository = env.GITHUB_REPOSITORY || "DuckDuckOff/spaceduck-content";
+  const branch = env.GITHUB_BRANCH || "main";
+  const apiUrl = env.GITHUB_API_URL || "https://api.github.com";
+  const headers = { accept: "application/vnd.github+json", authorization: `Bearer ${env.GITHUB_TOKEN}`, "x-github-api-version": "2022-11-28", "user-agent": "spaceduck-journal-chat" };
+  const path = `content/posts/${filename}`;
+  const existing = await fetch(`${apiUrl}/repos/${repository}/contents/${path}?ref=${encodeURIComponent(branch)}`, { headers });
+  const file = await existing.json().catch(() => ({}));
+  if (!existing.ok) {
+    if (existing.status === 404) throw new Error("That post was not found");
+    throw new Error(`GitHub lookup failed (${existing.status})${typeof file.message === "string" ? `: ${file.message.slice(0, 180)}` : ""}`);
+  }
+  const removed = await fetch(`${apiUrl}/repos/${repository}/contents/${path}`, {
+    method: "DELETE",
+    headers: { ...headers, "content-type": "application/json" },
+    body: JSON.stringify({ message: `content: delete ${filename.replace(/\.md$/, "")}`, sha: file.sha, branch }),
+  });
+  const detail = await removed.json().catch(() => ({}));
+  if (!removed.ok) throw new Error(`GitHub delete failed (${removed.status})${typeof detail.message === "string" ? `: ${detail.message.slice(0, 180)}` : ""}`);
+  return { filename, repository, branch, deploy: "automated" };
+}
+
 export async function onRequestPost({ request, env }) {
   const password = env.JOURNAL_BOT_PASSWORD;
   if (!password) return json({ error: "Journal bot is not configured" }, 503);
@@ -170,6 +196,7 @@ export async function onRequestPost({ request, env }) {
       return json({ ok: true, draft: await createDraft(body.prompt.trim().slice(0, 8000), env) });
     }
     if (body.action === "github-check") return json({ ok: true, github: await githubCheck(env) });
+    if (body.action === "delete") return json({ ok: true, result: await deletePost(body.filename, env) });
     if (body.action === "publish") {
       if (!body.draft || typeof body.draft.title !== "string" || typeof body.draft.body !== "string") return json({ error: "A valid reviewed draft is required" }, 400);
       const draft = {
