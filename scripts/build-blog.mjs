@@ -74,6 +74,15 @@ function videoEmbed(source) {
   return `<figure class="journal-video"><video controls preload="metadata" src="${escapeHtml(url)}"><a href="${escapeHtml(url)}">${escapeHtml(label)}</a></video>${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ""}</figure>`;
 }
 
+function imageEmbed(source) {
+  const match = source.trim().match(/^\{\{image:(\/media\/[A-Za-z0-9._/-]+)(?:\|([^}]+))?\}\}$/);
+  if (!match) return null;
+  const url = match[1];
+  const caption = match[2]?.trim();
+  const label = caption || "Journal image";
+  return `<figure class="journal-image"><img loading="lazy" src="${escapeHtml(url)}" alt="${escapeHtml(label)}">${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ""}</figure>`;
+}
+
 function markdownToHtml(markdown) {
   const lines = markdown.split(/\r?\n/);
   const html = [];
@@ -104,6 +113,13 @@ function markdownToHtml(markdown) {
       flushParagraph();
       closeList();
       html.push(video);
+      continue;
+    }
+    const image = imageEmbed(line);
+    if (image) {
+      flushParagraph();
+      closeList();
+      html.push(image);
       continue;
     }
     const heading = line.match(/^(#{1,3})\s+(.+)$/);
@@ -169,6 +185,9 @@ h1 { margin: 18px 0; font: 500 clamp(3rem, 8vw, 6.4rem)/.96 Georgia, serif; lett
 .journal-video { margin: 2.2em 0; }
 .journal-video video { display: block; width: 100%; max-height: 70vh; border: 1px solid var(--line); background: #000; }
 .journal-video figcaption { margin-top: .65em; color: var(--muted); font: .78rem ui-monospace, monospace; }
+.journal-image { margin: 2.2em 0; }
+.journal-image img { display: block; width: 100%; max-height: 70vh; object-fit: contain; border: 1px solid var(--line); background: #000; }
+.journal-image figcaption { margin-top: .65em; color: var(--muted); font: .78rem ui-monospace, monospace; }
 .back-link { margin: 0 0 35px; font: .78rem ui-monospace, monospace; text-transform: lowercase; }
 .back-link a { color: var(--muted); text-decoration: none; }
 .back-link a:hover { color: var(--accent); }
@@ -183,12 +202,18 @@ h1 { margin: 18px 0; font: 500 clamp(3rem, 8vw, 6.4rem)/.96 Georgia, serif; lett
 .chat-preview { margin-top: 28px; padding: 22px; border: 1px solid var(--line); background: rgba(13,25,40,.75); }
 .chat-preview h2 { margin-top: 0; font-weight: 500; }
 .chat-preview pre { overflow: auto; white-space: pre-wrap; color: var(--muted); font: .9rem/1.6 ui-monospace, monospace; }
+.post-admin { margin-top: 70px; padding-top: 22px; border-top: 1px solid var(--line); }
+.post-admin summary { color: var(--muted); cursor: pointer; font: .78rem ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; }
+.post-admin form { max-width: 420px; margin-top: 16px; }
+.post-admin input { width: 100%; border: 1px solid var(--line); border-radius: 4px; padding: .75em 1em; color: var(--ink); background: var(--panel); font: inherit; }
+.post-admin button { margin-top: 10px; border: 1px solid #ff9a9a; border-radius: 4px; padding: .7em 1em; color: #ffb4b4; background: transparent; font: .78rem ui-monospace, monospace; cursor: pointer; }
+.post-admin-status { min-height: 1.5em; margin-top: 12px; color: var(--muted); font: .82rem ui-monospace, monospace; }
 footer { padding: 35px 0 60px; color: var(--muted); font: .75rem ui-monospace, monospace; }
 @media (max-width: 650px) { header { padding-bottom: 55px; } .post-card { grid-template-columns: 1fr; gap: 7px; } .shell { width: min(100% - 28px, 1060px); } }
 `;
 
 function layout(title, content) {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)} · spaceduck</title><meta name="description" content="Field notes from the spaceduck signal."><link rel="stylesheet" href="/styles.css"></head><body><div class="shell"><header><a class="mark" href="/"><span>✦</span> spaceduck.ing</a><nav><a href="/">journal</a><a href="/about/">about</a><a href="/synapses/">synapses</a><a href="/chat/">chat</a><a href="/rss.xml">rss</a></nav></header>${content}<footer>signal received · spaceduck.ing</footer></div></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)} · spaceduck</title><meta name="description" content="Field notes from the spaceduck signal."><link rel="stylesheet" href="/styles.css"></head><body><div class="shell"><header><a class="mark" href="https://spaceduck.ing"><span>✦</span> spaceduck.ing</a><nav><a href="/">journal</a><a href="/about/">about</a><a href="/synapses/">synapses</a><a href="/chat/">chat</a><a href="/rss.xml">rss</a></nav></header>${content}<footer>signal received · spaceduck.ing</footer></div></body></html>`;
 }
 
 const entries = await fs.readdir(postsDir, { withFileTypes: true }).catch(() => []);
@@ -265,7 +290,7 @@ logoutButton.addEventListener("click", async () => { await call("logout", {}).ca
 await fs.mkdir(path.join(outputDir, "chat"), { recursive: true });
 await fs.writeFile(path.join(outputDir, "chat", "index.html"), layout("Chat", chat));
 
-const externalChat = `<main class="chat-panel"><div class="eyebrow">external journal interface</div><h1>Reach the journal bot.</h1><p>Use the journal password to draft and publish entries remotely. A secure session cookie is used after sign-in; the password is not stored by this page.</p><label for="password">journal password</label><input id="password" type="password" autocomplete="current-password" placeholder="Required to continue"><label for="external-prompt">what should be recorded?</label><textarea id="external-prompt" placeholder="Record today’s mission..." maxlength="8000"></textarea><div class="chat-actions"><button id="external-check" class="secondary">Check GitHub connection</button><button id="external-draft">Draft entry</button><button id="external-publish" class="secondary" disabled>Publish reviewed entry</button></div><label for="delete-filename">delete a published post</label><input id="delete-filename" placeholder="2026-07-27-my-entry.md" autocomplete="off"><div class="chat-actions"><button id="external-delete" class="secondary">Delete post</button></div><div id="external-status" class="chat-status" role="status"></div><section id="external-preview" class="chat-preview" hidden><h2 id="external-title"></h2><div id="external-meta"></div><pre id="external-body"></pre></section></main><script>
+const externalChat = `<main class="chat-panel"><div class="eyebrow">external journal interface</div><h1>Reach the journal bot.</h1><p>Use the journal password to draft and publish entries remotely. A secure session cookie is used after sign-in; the password is not stored by this page.</p><label for="password">journal password</label><input id="password" type="password" autocomplete="current-password" placeholder="Required to continue"><label for="external-prompt">what should be recorded?</label><textarea id="external-prompt" placeholder="Record today’s mission..." maxlength="8000"></textarea><div class="chat-actions"><button id="external-check" class="secondary">Check GitHub connection</button><button id="external-draft">Draft entry</button><button id="external-publish" class="secondary" disabled>Publish reviewed entry</button></div><label for="media-file">upload a photo or video</label><input id="media-file" type="file" accept="image/jpeg,image/png,image/gif,image/webp,image/avif,video/mp4,video/webm,video/ogg,video/quicktime"><div class="chat-actions"><button id="external-upload" class="secondary">Upload media</button></div><p class="chat-help">Uploads are limited to 12 MB for photos and 30 MB for videos. The returned embed is inserted into the editor below.</p><label for="edit-filename">edit a published post</label><div class="chat-actions"><input id="edit-filename" placeholder="2026-07-27-my-entry.md" autocomplete="off"><button id="external-load-edit" class="secondary">Load post</button></div><textarea id="edit-content" placeholder="Load a post to edit it..." maxlength="30000" disabled></textarea><div class="chat-actions"><button id="external-save-edit" class="secondary" disabled>Save edited post</button></div><label for="delete-filename">delete a published post</label><input id="delete-filename" placeholder="2026-07-27-my-entry.md" autocomplete="off"><div class="chat-actions"><button id="external-delete" class="secondary">Delete post</button></div><div id="external-status" class="chat-status" role="status"></div><section id="external-preview" class="chat-preview" hidden><h2 id="external-title"></h2><div id="external-meta"></div><pre id="external-body"></pre></section></main><script>
 const password = document.getElementById("password");
 const prompt = document.getElementById("external-prompt");
 const checkButton = document.getElementById("external-check");
@@ -273,6 +298,12 @@ const draftButton = document.getElementById("external-draft");
 const publishButton = document.getElementById("external-publish");
 const deleteButton = document.getElementById("external-delete");
 const deleteFilename = document.getElementById("delete-filename");
+const loadEditButton = document.getElementById("external-load-edit");
+const saveEditButton = document.getElementById("external-save-edit");
+const editFilename = document.getElementById("edit-filename");
+const editContent = document.getElementById("edit-content");
+const mediaFile = document.getElementById("media-file");
+const uploadButton = document.getElementById("external-upload");
 const status = document.getElementById("external-status");
 const preview = document.getElementById("external-preview");
 const title = document.getElementById("external-title");
@@ -316,11 +347,35 @@ deleteButton.addEventListener("click", async () => {
   try { if (!password.value) throw new Error("Enter the journal password first"); await call("login", { password: password.value }); const result = await call("delete", { filename }); status.textContent = "Deleted " + result.result.filename + ". Automated deployment is running."; }
   catch (error) { status.textContent = error.message; }
 });
+loadEditButton.addEventListener("click", async () => {
+  status.textContent = "Loading post...";
+  try { if (!password.value) throw new Error("Enter the journal password first"); await call("login", { password: password.value }); const result = await call("get-post", { filename: editFilename.value }); editContent.value = result.post.content; editContent.disabled = false; saveEditButton.disabled = false; status.textContent = "Post loaded. Review your changes before saving."; }
+  catch (error) { status.textContent = error.message; }
+});
+saveEditButton.addEventListener("click", async () => {
+  if (!editFilename.value || !editContent.value || !confirm("Save these edits to the public journal?")) return;
+  status.textContent = "Saving edits...";
+  try { if (!password.value) throw new Error("Enter the journal password first"); await call("login", { password: password.value }); const result = await call("edit", { filename: editFilename.value, content: editContent.value }); status.textContent = "Updated " + result.result.filename + ". Automated Pages deployment is running."; }
+  catch (error) { status.textContent = error.message; }
+});
+uploadButton.addEventListener("click", async () => {
+  const file = mediaFile.files?.[0];
+  if (!file) { status.textContent = "Choose a photo or video first."; return; }
+  status.textContent = "Uploading media...";
+  try {
+    if (!password.value) throw new Error("Enter the journal password first");
+    await call("login", { password: password.value });
+    const data = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(",", 2)[1] || ""); reader.onerror = () => reject(new Error("The file could not be read")); reader.readAsDataURL(file); });
+    const result = await call("upload-media", { filename: file.name, contentType: file.type, data });
+    if (!editContent.disabled) { editContent.value = editContent.value.replace(/\s*$/, "") + "\n\n" + result.result.embed + "\n"; }
+    status.textContent = "Uploaded " + result.result.filename + ". " + (editContent.disabled ? "Load a post, then insert this embed manually: " : "Embed inserted into the editor. ") + result.result.embed;
+  } catch (error) { status.textContent = error.message; }
+});
 </script>`;
 await fs.mkdir(path.join(outputDir, "chat", "external"), { recursive: true });
 await fs.writeFile(path.join(outputDir, "chat", "external", "index.html"), layout("External Chat", externalChat));
 
-const about = `<main class="article"><div class="eyebrow">orientation</div><h1>A small place for the signal.</h1><div class="article-body"><p>Spaceduck is a living field journal for observations, build logs, strange ideas, and the ordinary moments that deserve to be remembered.</p><p>Notes begin privately, are shaped with care, and become public only when they are ready. The journal is deliberately small: a quiet surface for paying attention while the larger systems take form.</p><h2>How it works</h2><p>Approved Markdown notes are committed to Git, transformed into a static journal, and deployed to Cloudflare at <a href="https://blog.spaceduck.ing">blog.spaceduck.ing</a>.</p><p>The archive is a record of what arrived, what changed, and what is still becoming.</p></div></main>`;
+const about = `<main class="article"><p class="back-link"><a href="/">← back to list</a></p><div class="eyebrow">orientation</div><h1>A small place for the signal.</h1><div class="article-body"><p>Spaceduck is a living field journal for observations, build logs, strange ideas, and the ordinary moments that deserve to be remembered.</p><p>Notes begin privately, are shaped with care, and become public only when they are ready. The journal is deliberately small: a quiet surface for paying attention while the larger systems take form.</p><h2>How it works</h2><p>Approved Markdown notes are committed to Git, transformed into a static journal, and deployed to Cloudflare at <a href="https://blog.spaceduck.ing">blog.spaceduck.ing</a>.</p><p>The archive is a record of what arrived, what changed, and what is still becoming.</p></div></main>`;
 await fs.mkdir(path.join(outputDir, "about"), { recursive: true });
 await fs.writeFile(path.join(outputDir, "about", "index.html"), layout("About", about));
 
@@ -333,7 +388,27 @@ await fs.mkdir(path.join(outputDir, "synapses"), { recursive: true });
 await fs.writeFile(path.join(outputDir, "synapses", "index.html"), layout("SynapSes", synapses));
 
 for (const post of posts) {
-  const article = `<main class="article"><p class="back-link"><a href="/">← back to list</a></p><div class="eyebrow">${escapeHtml(post.lane)}</div><h1>${escapeHtml(post.title)}</h1><div class="lead">${escapeHtml(post.date)} · spaceduck.ing</div><div class="article-body">${markdownToHtml(post.body)}</div></main>`;
+  const postFilename = JSON.stringify(post.filename);
+  const article = `<main class="article"><p class="back-link"><a href="/">← back to list</a></p><div class="eyebrow">${escapeHtml(post.lane)}</div><h1>${escapeHtml(post.title)}</h1><div class="lead">${escapeHtml(post.date)} · spaceduck.ing</div><div class="article-body">${markdownToHtml(post.body)}</div><details class="post-admin"><summary>journal controls</summary><form id="post-delete-form"><label for="post-delete-password">journal password</label><input id="post-delete-password" type="password" autocomplete="current-password" placeholder="Required to delete this note"><button type="submit">Delete this note</button><div id="post-delete-status" class="post-admin-status" role="status"></div></form></details><script>
+const postDeleteForm = document.getElementById("post-delete-form");
+const postDeletePassword = document.getElementById("post-delete-password");
+const postDeleteStatus = document.getElementById("post-delete-status");
+postDeleteForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!postDeletePassword.value || !confirm("Permanently delete this note from the public journal?")) return;
+  postDeleteStatus.textContent = "Deleting...";
+  try {
+    const login = await fetch("/api/journal", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "login", password: postDeletePassword.value }) });
+    const loginPayload = await login.json().catch(() => ({}));
+    if (!login.ok) throw new Error(loginPayload.error || "Login failed");
+    const result = await fetch("/api/journal", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "delete", filename: ${postFilename} }) });
+    const payload = await result.json().catch(() => ({}));
+    if (!result.ok) throw new Error(payload.error || "Delete failed");
+    postDeleteStatus.textContent = "Deleted. Returning to the journal...";
+    setTimeout(() => { window.location.href = "/"; }, 900);
+  } catch (error) { postDeleteStatus.textContent = error.message; }
+});
+</script></main>`;
   const directory = path.join(outputDir, "posts", post.slug);
   await fs.mkdir(directory, { recursive: true });
   await fs.writeFile(path.join(directory, "index.html"), layout(post.title, article));
