@@ -1,6 +1,7 @@
 ---
 title: "The First POP Resonator Demo"
 date: 2026-08-09
+order: 2
 lane: field-notes
 status: published
 visibility: public

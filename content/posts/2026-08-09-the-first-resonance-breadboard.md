@@ -1,6 +1,7 @@
 ---
 title: "The first resonance breadboard"
 date: 2026-08-09
+order: 1
 lane: notes
 status: published
 visibility: public

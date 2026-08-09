@@ -53,6 +53,7 @@ function parsePost(filename, source) {
     filename,
     title: metadata.title || slugFromFilename(filename),
     date: metadata.date || "",
+    order: Number(metadata.order || 0),
     lane: metadata.lane || "notes",
     body,
   };
@@ -223,7 +224,7 @@ for (const entry of entries) {
     posts.push(parsePost(entry.name, await fs.readFile(path.join(postsDir, entry.name), "utf8")));
   }
 }
-posts.sort((a, b) => b.date.localeCompare(a.date) || b.filename.localeCompare(a.filename));
+posts.sort((a, b) => b.date.localeCompare(a.date) || b.order - a.order || b.filename.localeCompare(a.filename));
 
 await fs.rm(outputDir, { recursive: true, force: true });
 await fs.mkdir(path.join(outputDir, "posts"), { recursive: true });
