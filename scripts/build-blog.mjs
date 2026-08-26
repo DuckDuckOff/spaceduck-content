@@ -239,6 +239,10 @@ const mediaDir = path.join(publicDir, "media");
 await fs.cp(mediaDir, path.join(outputDir, "media"), { recursive: true, force: true }).catch((error) => {
   if (error.code !== "ENOENT") throw error;
 });
+const fontsDir = path.join(publicDir, "fonts");
+await fs.cp(fontsDir, path.join(outputDir, "fonts"), { recursive: true, force: true }).catch((error) => {
+  if (error.code !== "ENOENT") throw error;
+});
 
 const cards = posts.length
   ? posts.map((post) => `<article class="post-card"><div class="post-meta">${escapeHtml(post.date)}<br>${escapeHtml(post.lane)}</div><div><h2><a href="/posts/${encodeURIComponent(post.slug)}/">${escapeHtml(post.title)}</a></h2><p>${escapeHtml(post.body.replace(/[#*`]/g, "").slice(0, 180))}${post.body.length > 180 ? "…" : ""}</p></div></article>`).join("\n")
