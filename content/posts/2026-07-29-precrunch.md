@@ -9,4 +9,4 @@ tags: [dux, video, experiments]
 ---
 An early precrunch experiment from the Dux wave-propagation work.
 
-{{video:/media/precrunch.mov|Precrunch experiment}}
+{{video:/media/dux-module-precrunch.mov|Precrunch experiment}}

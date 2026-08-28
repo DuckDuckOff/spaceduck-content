@@ -9,4 +9,4 @@ tags: [dux, video, experiments]
 ---
 An early look at the Dux module experiments becoming active on screen.
 
-{{video:/media/active-dux.mov|Active Dux experiment}}
+{{video:/media/dux-module-active-visualisation.mov|Active Dux experiment}}
