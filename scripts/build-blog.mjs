@@ -198,6 +198,9 @@ h1 { margin: 18px 0; font: 500 clamp(3rem, 8vw, 6.4rem)/.96 Poppins, sans-serif;
 .back-link { margin: 0 0 35px; font: 500 .78rem Poppins, sans-serif; text-transform: lowercase; }
 .back-link a { color: var(--muted); text-decoration: none; }
 .back-link a:hover { color: var(--accent); }
+.pop-home-link { margin: 0 0 12px; }
+.pop-home-link a { display: inline-flex; align-items: center; padding: 8px 14px; border: 1px solid rgba(115,84,201,.24); border-radius: 999px; color: var(--violet); background: var(--lilac); font: 500 .76rem Poppins, sans-serif; text-decoration: none; box-shadow: 0 8px 22px rgba(45,38,77,.06); transition: transform .18s ease, border-color .18s ease; }
+.pop-home-link a:hover { transform: translateY(-1px); border-color: rgba(115,84,201,.48); }
 .chat-panel { max-width: 720px; padding-bottom: 100px; }
 .chat-panel label { display: block; margin: 1.4em 0 .45em; color: var(--muted); font: 500 .78rem Poppins, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
 .chat-panel input, .chat-panel textarea { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: .85em 1em; color: var(--ink); background: var(--panel); font: inherit; }
@@ -220,7 +223,7 @@ footer { padding: 35px 0 60px; color: var(--muted); font: 500 .75rem Poppins, sa
 `;
 
 function layout(title, content) {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)} · spaceduck</title><meta name="description" content="Field notes from the spaceduck signal."><link rel="stylesheet" href="/styles.css"></head><body><div class="shell"><header><a class="mark" href="https://spaceduck.ing"><span>✦</span> spaceduck.ing</a><nav><a href="/">journal</a><a href="/about/">about</a><a href="/synapses/">synapses</a><a href="/chat/">chat</a><a href="https://art.pops.mobi">POP-Art</a><a href="/rss.xml">rss</a></nav></header>${content}<footer>posts total: ${posts.length} · signal received · spaceduck.ing</footer></div></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)} · spaceduck</title><meta name="description" content="Field notes from the spaceduck signal."><link rel="stylesheet" href="/styles.css"></head><body><div class="shell"><header><a class="mark" href="https://spaceduck.ing"><span>✦</span> spaceduck.ing</a><nav><a href="/">journal</a><a href="/about/">about</a><a href="/synapses/">synapses</a><a href="/chat/">chat</a><a href="https://art.pops.mobi">POP-Art</a><a href="https://join.pops.mobi">POPchain</a><a href="/rss.xml">rss</a></nav></header>${content}<footer>posts total: ${posts.length} · signal received · spaceduck.ing</footer></div></body></html>`;
 }
 
 const entries = await fs.readdir(postsDir, { withFileTypes: true }).catch(() => []);
@@ -386,7 +389,7 @@ uploadButton.addEventListener("click", async () => {
 await fs.mkdir(path.join(outputDir, "chat", "external"), { recursive: true });
 await fs.writeFile(path.join(outputDir, "chat", "external", "index.html"), layout("External Chat", externalChat));
 
-const about = `<main class="article"><p class="back-link"><a href="/">← back to list</a></p><div class="eyebrow">orientation</div><h1>A small place for the signal.</h1><div class="article-body"><p>Spaceduck is a living field journal for observations, build logs, strange ideas, and the ordinary moments that deserve to be remembered.</p><p>Notes begin privately, are shaped with care, and become public only when they are ready. The journal is deliberately small: a quiet surface for paying attention while the larger systems take form.</p><h2>How it works</h2><p>Approved Markdown notes are committed to Git, transformed into a static journal, and deployed to Cloudflare at <a href="https://blog.spaceduck.ing">blog.spaceduck.ing</a>.</p><p>The archive is a record of what arrived, what changed, and what is still becoming.</p></div></main>`;
+const about = `<main class="article"><p class="pop-home-link"><a href="https://home.pops.mobi">← back to POP home</a></p><p class="back-link"><a href="/">← back to list</a></p><div class="eyebrow">orientation</div><h1>A small place for the signal.</h1><div class="article-body"><p>Spaceduck is a living field journal for observations, build logs, strange ideas, and the ordinary moments that deserve to be remembered.</p><p>Notes begin privately, are shaped with care, and become public only when they are ready. The journal is deliberately small: a quiet surface for paying attention while the larger systems take form.</p><h2>How it works</h2><p>Approved Markdown notes are committed to Git, transformed into a static journal, and deployed to Cloudflare at <a href="https://blog.spaceduck.ing">blog.spaceduck.ing</a>.</p><p>The archive is a record of what arrived, what changed, and what is still becoming.</p></div></main>`;
 await fs.mkdir(path.join(outputDir, "about"), { recursive: true });
 await fs.writeFile(path.join(outputDir, "about", "index.html"), layout("About", about));
 
@@ -400,7 +403,7 @@ await fs.writeFile(path.join(outputDir, "synapses", "index.html"), layout("Synap
 
 for (const post of posts) {
   const postFilename = JSON.stringify(post.filename);
-  const article = `<main class="article"><p class="back-link"><a href="/">← back to list</a></p><div class="eyebrow">${escapeHtml(post.lane)}</div><h1>${escapeHtml(post.title)}</h1><div class="lead">${escapeHtml(post.date)} · spaceduck.ing</div><div class="article-body">${markdownToHtml(post.body)}</div><details class="post-admin"><summary>journal controls</summary><form id="post-delete-form"><label for="post-delete-password">journal password</label><input id="post-delete-password" type="password" autocomplete="current-password" placeholder="Required to delete this note"><button type="submit">Delete this note</button><div id="post-delete-status" class="post-admin-status" role="status"></div></form></details><script>
+  const article = `<main class="article"><p class="pop-home-link"><a href="https://home.pops.mobi">← back to POP home</a></p><p class="back-link"><a href="/">← back to list</a></p><div class="eyebrow">${escapeHtml(post.lane)}</div><h1>${escapeHtml(post.title)}</h1><div class="lead">${escapeHtml(post.date)} · spaceduck.ing</div><div class="article-body">${markdownToHtml(post.body)}</div><details class="post-admin"><summary>journal controls</summary><form id="post-delete-form"><label for="post-delete-password">journal password</label><input id="post-delete-password" type="password" autocomplete="current-password" placeholder="Required to delete this note"><button type="submit">Delete this note</button><div id="post-delete-status" class="post-admin-status" role="status"></div></form></details><script>
 const postDeleteForm = document.getElementById("post-delete-form");
 const postDeletePassword = document.getElementById("post-delete-password");
 const postDeleteStatus = document.getElementById("post-delete-status");
